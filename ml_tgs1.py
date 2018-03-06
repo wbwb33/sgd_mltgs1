@@ -40,6 +40,24 @@ def teta(t,delta,a):
     #teta baru
     return t - (delta*a)
 
+def sgd(x1,x2,x3,x4,label,t1,t2,t3,t4,b):
+    avg = pd.Series([])
+    for current_epoch in range(0,epoch):
+        h = h1(x1,x2,x3,x4,t1,t2,t3,t4,b)
+        sigmoid = sigmoid_activation(h)
+        error = error1(sigmoid,label)
+        dteta1 = delta(x1,sigmoid,label)
+        dteta2 = delta(x2,sigmoid,label)
+        dteta3 = delta(x3,sigmoid,label)
+        dteta4 = delta(x4,sigmoid,label)
+        dbias = deltabias(sigmoid,label)
+        t1 = teta(t1,dteta1,a)
+        t2 = teta(t2,dteta2,a)
+        t3 = teta(t3,dteta3,a)
+        t4 = teta(t4,dteta4,a)
+        b = teta(b,dbias,a)
+        avg[current_epoch] = np.mean(error)
+    return avg
 #cleaning data
 #setosa = 1
 #versicolor = 0
@@ -49,35 +67,46 @@ for x in range(0,100):
     else:
         iris.iloc[x,4]=0
 
-#inisialisasi
-x1 = iris.iloc[:,0]
-x2 = iris.iloc[:,1]
-x3 = iris.iloc[:,2]
-x4 = iris.iloc[:,3]
-label = iris.iloc[:,4]
+#splitting the iris into 40 training and 10 validation
+irist = iris.iloc[pd.np.r_[:40,50:90]]
+irisv = iris.iloc[pd.np.r_[40:50,90:100]]
+        
+#preparation for training dataset
+x1 = irist.iloc[:,0]
+x2 = irist.iloc[:,1]
+x3 = irist.iloc[:,2]
+x4 = irist.iloc[:,3]
+label = irist.iloc[:,4]
 avg_error = pd.Series([])
 
-#sgd epoch = 60
-for current_epoch in range(0,epoch):
-    h = h1(x1,x2,x3,x4,t1,t2,t3,t4,b)
-    sigmoid = sigmoid_activation(h)
-    error = error1(sigmoid,label)
-    dteta1 = delta(x1,sigmoid,label)
-    dteta2 = delta(x2,sigmoid,label)
-    dteta3 = delta(x3,sigmoid,label)
-    dteta4 = delta(x4,sigmoid,label)
-    dbias = deltabias(sigmoid,label)
-    t1 = teta(t1,dteta1,a)
-    t2 = teta(t2,dteta2,a)
-    t3 = teta(t3,dteta3,a)
-    t4 = teta(t4,dteta4,a)
-    b = teta(b,dbias,a)
-    avg_error[current_epoch] = np.mean(error)
+#preparation for validation dataset
+t1v = t1
+t2v = t2
+t3v = t3
+t4v = t4
+bv = b
+x1v = irisv.iloc[:,0]
+x2v = irisv.iloc[:,1]
+x3v = irisv.iloc[:,2]
+x4v = irisv.iloc[:,3]
+labelv = irisv.iloc[:,4]
+avg_errorv = pd.Series([])
+
+#sgd start
+#epoch = 60
+#training
+avg_error=sgd(x1,x2,x3,x4,label,t1,t2,t3,t4,b)
+
+#validation
+#epoch = 60
+avg_errorv=sgd(x1v,x2v,x3v,x4v,labelv,t1v,t2v,t3v,t4v,bv)
 
 #grafik
 fig = plt.figure()
-plt.plot(np.arange(0, 60), avg_error, linestyle='-',marker='o')
-fig.suptitle("Training Loss")
+plt.plot(np.arange(0, epoch), avg_error, linestyle='-', label='training')
+plt.plot(np.arange(0, epoch), avg_errorv, color='orange', linestyle='dashed', label='validation')
+plt.legend()
+fig.suptitle("Training Loss, alpha = %s" %(a))
 plt.xlabel("Epoch #")
 plt.ylabel("Loss")
 plt.show()
